@@ -77,11 +77,10 @@
       </div>
 
       <div class="filter-chips-scroll" id="humidityFilterChips">
-        <button class="chip active" data-filter="all">Tutte</button>
+        <button class="chip active" data-filter="all">Tutte (<span id="visibleCountBadge">0</span>)</button>
         <button class="chip" data-filter="Bassa">Bassa</button>
         <button class="chip" data-filter="Media">Media</button>
         <button class="chip" data-filter="Alta">Alta</button>
-        <span class="count-pill" id="visibleCountBadge">0 piante</span>
       </div>
     </section>
 
@@ -109,8 +108,8 @@
 
   </main>
 
-  <!-- Mobile Floating Action Button (FAB) -->
-  <button class="fab-btn" id="fabAddBtn" title="Nuova Pianta" aria-label="Nuova Pianta">
+  <!-- Mobile Floating Action Button (Kept hidden so it doesn't cover card photos) -->
+  <button class="fab-btn" id="fabAddBtn" title="Nuova Pianta" aria-label="Nuova Pianta" style="display: none;">
     <i class="fa-solid fa-plus"></i>
   </button>
 

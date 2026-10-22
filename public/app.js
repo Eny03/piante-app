@@ -442,7 +442,9 @@ function renderPlants() {
     filtered.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
   }
 
-  elements.visibleCountBadge.textContent = `${filtered.length} visualizzate`;
+  if (elements.visibleCountBadge) {
+    elements.visibleCountBadge.textContent = filtered.length;
+  }
 
   if (filtered.length === 0) {
     elements.plantsGrid.innerHTML = '';
@@ -477,11 +479,14 @@ function renderPlants() {
 function shortenSunlight(sun) {
   if (!sun) return 'Diffusa';
   const s = String(sun).toLowerCase();
+  if (s.includes('pieno sole') || s.includes('sole diretto')) return 'Pieno sole';
+  if (s.includes('solare') || s.includes('sole')) return 'Luce solare';
   if (s.includes('indiretta')) return 'Luce indiretta';
-  if (s.includes('pieno sole')) return 'Pieno sole';
   if (s.includes('mezz\'ombra') || s.includes('mezzombra')) return 'Mezz\'ombra';
   if (s.includes('ombra')) return 'Ombra';
-  return sun.length > 15 ? sun.substring(0, 13) + '..' : sun;
+  if (s.includes('diffusa')) return 'Luce diffusa';
+  if (s.includes('luminosa')) return 'Molta luce';
+  return sun.length > 14 ? sun.substring(0, 12) : sun;
 }
 
 function createPlantCardHTML(plant) {
