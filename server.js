@@ -603,15 +603,16 @@ function identifyWithBotanicalEngine(filenameOrUrl, imageBuffer) {
     }
   }
 
-  // 4. Smart generic default for houseplants
+  // 4. Smart generic default when no key and no match
   return {
-    name: 'Pianta da Appartamento',
-    scientificName: 'Specie botanica identificata',
+    name: '',
+    scientificName: '',
     ph: '6.0 - 6.8',
     temperature: '18°C - 24°C',
     humidity: '35% - 50%',
     sunlight: 'Luce indiretta luminosa',
-    notes: 'Terriccio drenante. Annaffiare quando i primi centimetri di suolo risultano asciutti al tatto.'
+    notes: 'Terriccio drenante. Annaffiare quando i primi centimetri di suolo risultano asciutti al tatto.',
+    isDefaultFallback: true
   };
 }
 

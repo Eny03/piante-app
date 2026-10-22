@@ -716,13 +716,20 @@ async function runAiPlantScan(file, imageUrl = null) {
       setPhotoPreview(plant.imageUrl);
     }
 
-    // Mostra banner di successo AI
+    // Mostra banner di successo AI o avviso configurazione
     elements.aiLoadingIndicator.style.display = 'none';
     elements.aiSuccessBanner.style.display = 'flex';
-    elements.aiIdentifiedTitle.textContent = `✨ Riconosciuta: ${plant.name}`;
-    elements.aiIdentifiedDetails.textContent = `${plant.scientificName || ''} | pH: ${plant.ph || 'N/D'} | Umidità: ${plant.humidity || 'N/D'} | Temp: ${plant.temperature || 'N/D'}`;
 
-    showToast(`✨ Pianta riconosciuta: "${plant.name}"! Tutti i campi sono stati compilati.`, 'success');
+    if (plant.isDefaultFallback) {
+      elements.aiIdentifiedTitle.innerHTML = '<i class="fa-solid fa-camera" style="color: #0284c7;"></i> Foto caricata nel form';
+      elements.aiIdentifiedDetails.innerHTML = 'Per il riconoscimento botanico reale con l\'Intelligenza Artificiale visiva (specie, pH e umidità), apri <strong>"Impostazioni AI"</strong> in alto a destra per collegare la chiave gratuita Google Gemini!';
+      showToast('Foto caricata! Collega la chiave gratuita in "Impostazioni AI" per il riconoscimento automatico visivo.', 'info');
+      if (elements.plantNameInput) elements.plantNameInput.focus();
+    } else {
+      elements.aiIdentifiedTitle.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> Riconosciuta: ${escapeHtml(plant.name)}`;
+      elements.aiIdentifiedDetails.textContent = `${plant.scientificName || ''} | pH: ${plant.ph || 'N/D'} | Umidità: ${plant.humidity || 'N/D'} | Temp: ${plant.temperature || 'N/D'}`;
+      showToast(`✨ Pianta riconosciuta: "${plant.name}"! Tutti i campi sono stati compilati.`, 'success');
+    }
   } catch (err) {
     console.error('Errore runAiPlantScan:', err);
     elements.aiLoadingIndicator.style.display = 'none';
