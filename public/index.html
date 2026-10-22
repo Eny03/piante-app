@@ -2,160 +2,115 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Herbarium — Database Botanico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#166534">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Herbarium</title>
   
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
   
-  <!-- Google Fonts: Plus Jakarta Sans & Playfair Display -->
+  <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <!-- QR Code Library for quick sharing -->
+  <!-- QR Code Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- App Header -->
   <header class="navbar">
     <div class="nav-container">
       <div class="brand">
-        <div class="brand-icon">🌿</div>
-        <div class="brand-text">
-          <h1>Herbarium</h1>
-          <span class="subtext">Database Botanico Condiviso</span>
-        </div>
-      </div>
-
-      <div class="nav-center">
-        <div class="live-badge" id="liveSyncBadge" title="Stato connessione database in tempo reale">
-          <span class="pulse-dot"></span>
-          <span class="badge-text">Sincronizzato</span>
-        </div>
+        <span class="brand-emoji">🌿</span>
+        <h1 class="brand-title">Herbarium</h1>
+        <span class="live-dot" id="liveSyncBadge" title="Sincronizzato in tempo reale"></span>
       </div>
 
       <div class="nav-actions">
-        <button class="btn btn-secondary" id="openShareBtn" title="Condividi con chiunque tramite link o QR Code">
+        <button class="btn-icon" id="openShareBtn" title="Condividi" aria-label="Condividi">
           <i class="fa-solid fa-share-nodes"></i>
-          <span>Condividi</span>
         </button>
-        <button class="btn btn-ai-action" id="openAiScanBtn" title="Scatta una foto per riconoscere automaticamente la pianta">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-          <span>Scatta & Riconosci (AI)</span>
+        <button class="btn btn-ai-action" id="openAiScanBtn" title="Scatta Foto con AI">
+          <i class="fa-solid fa-camera"></i>
+          <span>Scatta AI</span>
         </button>
-        <button class="btn btn-primary" id="openAddModalBtn">
+        <button class="btn btn-primary" id="openAddModalBtn" title="Aggiungi Pianta" aria-label="Aggiungi Pianta">
           <i class="fa-solid fa-plus"></i>
-          <span>Nuova Pianta</span>
         </button>
       </div>
     </div>
   </header>
 
+  <!-- Hidden elements kept for JS compatibility -->
+  <div style="display: none;">
+    <span id="statTotalPlants">0</span>
+    <span id="statHumidityHigh">0</span>
+    <span id="statHumidityLow">0</span>
+    <select id="sortSelect">
+      <option value="recent">Recenti</option>
+      <option value="name-asc">A-Z</option>
+      <option value="name-desc">Z-A</option>
+      <option value="ph-asc">pH</option>
+    </select>
+  </div>
+
   <!-- Main Container -->
   <main class="main-container">
     
-    <!-- Hero / Info Banner -->
-    <section class="hero-banner">
-      <div class="hero-content">
-        <h2>Il tuo catalogo botanico collaborativo</h2>
-        <p>Visualizza, aggiungi e modifica le caratteristiche ideali di ogni pianta in tempo reale. Nessun account richiesto: le modifiche si sincronizzano istantaneamente per chiunque apra il link.</p>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fa-solid fa-seedling"></i></div>
-          <div class="stat-info">
-            <span class="stat-value" id="statTotalPlants">0</span>
-            <span class="stat-label">Piante Totali</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fa-solid fa-droplet"></i></div>
-          <div class="stat-info">
-            <span class="stat-value" id="statHumidityHigh">0</span>
-            <span class="stat-label">Alta Umidità</span>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="fa-solid fa-sun"></i></div>
-          <div class="stat-info">
-            <span class="stat-value" id="statHumidityLow">0</span>
-            <span class="stat-label">Bassa Umidità</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Controls Bar: Search, Filters, Sort -->
+    <!-- Search & Filter Bar -->
     <section class="controls-section">
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" placeholder="Cerca pianta per nome, nome scientifico o note...">
-        <button class="clear-search-btn" id="clearSearchBtn" style="display: none;" title="Cancella ricerca">
+        <input type="text" id="searchInput" placeholder="Cerca pianta...">
+        <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div class="filters-row">
-        <div class="filter-group">
-          <span class="filter-label"><i class="fa-solid fa-droplet"></i> Umidità:</span>
-          <div class="chip-group" id="humidityFilterChips">
-            <button class="chip active" data-filter="all">Tutte</button>
-            <button class="chip" data-filter="Bassa">Bassa</button>
-            <button class="chip" data-filter="Media">Media</button>
-            <button class="chip" data-filter="Alta">Alta</button>
-          </div>
-        </div>
-
-        <div class="sort-group">
-          <span class="filter-label"><i class="fa-solid fa-arrow-down-short-wide"></i> Ordina:</span>
-          <select id="sortSelect" class="custom-select">
-            <option value="recent">Più recenti</option>
-            <option value="name-asc">Nome (A - Z)</option>
-            <option value="name-desc">Nome (Z - A)</option>
-            <option value="ph-asc">pH crescente</option>
-          </select>
-        </div>
+      <div class="filter-chips-scroll" id="humidityFilterChips">
+        <button class="chip active" data-filter="all">Tutte</button>
+        <button class="chip" data-filter="Bassa">Bassa</button>
+        <button class="chip" data-filter="Media">Media</button>
+        <button class="chip" data-filter="Alta">Alta</button>
+        <span class="count-pill" id="visibleCountBadge">0 piante</span>
       </div>
     </section>
 
-    <!-- Plants Dashboard Grid -->
+    <!-- Catalog Section -->
     <section class="catalog-section">
-      <div class="section-header">
-        <h3 id="catalogTitle">Tutte le piante</h3>
-        <span class="count-badge" id="visibleCountBadge">0 visualizzate</span>
-      </div>
-
       <!-- Loading State -->
       <div class="loading-state" id="loadingState">
         <div class="spinner"></div>
-        <p>Caricamento del database botanico...</p>
+        <p>Caricamento piante...</p>
       </div>
 
       <!-- Empty State -->
       <div class="empty-state" id="emptyState" style="display: none;">
         <div class="empty-icon">🌱</div>
         <h3>Nessuna pianta trovata</h3>
-        <p id="emptyMessage">Non ci sono piante corrispondenti ai filtri attuali oppure il catalogo è vuoto.</p>
-        <button class="btn btn-primary" id="emptyAddBtn">
-          <i class="fa-solid fa-plus"></i> Aggiungi la prima pianta
+        <p id="emptyMessage">Nessun risultato con i filtri attuali.</p>
+        <button class="btn btn-primary btn-sm" id="emptyAddBtn">
+          <i class="fa-solid fa-plus"></i> Aggiungi Pianta
         </button>
       </div>
 
-      <!-- Plant Cards Grid -->
+      <!-- Plant Cards Grid (1-column on mobile) -->
       <div class="plants-grid" id="plantsGrid"></div>
     </section>
 
   </main>
 
   <!-- Mobile Floating Action Button (FAB) -->
-  <button class="fab-btn" id="fabAddBtn" title="Aggiungi Nuova Pianta">
+  <button class="fab-btn" id="fabAddBtn" title="Nuova Pianta" aria-label="Nuova Pianta">
     <i class="fa-solid fa-plus"></i>
   </button>
 
@@ -165,12 +120,9 @@
       <div class="modal-header">
         <div class="modal-title-wrap">
           <span class="modal-emoji" id="modalEmoji">🌿</span>
-          <div>
-            <h3 id="modalTitle">Aggiungi Nuova Pianta</h3>
-            <p class="modal-subtitle">Inserisci i parametri botanici ottimali per la coltivazione</p>
-          </div>
+          <h3 id="modalTitle">Nuova Pianta</h3>
         </div>
-        <button class="close-modal-btn" id="closeModalBtn" aria-label="Chiudi finestra">
+        <button class="close-modal-btn" id="closeModalBtn" aria-label="Chiudi">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -178,207 +130,155 @@
       <form id="plantForm" class="modal-body" novalidate>
         <input type="hidden" id="plantIdInput">
 
-        <!-- AI Smart Recognition Banner -->
+        <!-- AI Camera Block -->
         <div class="ai-scan-card" id="aiScanCard">
-          <div class="ai-scan-header">
-            <div class="ai-badge">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> AI Botanical Scanner
-            </div>
-            <button type="button" class="btn-link-sm" id="toggleAiKeyBtn" title="Configura Chiave API Gemini">
-              <i class="fa-solid fa-gear"></i> Impostazioni AI
+          <div class="ai-scan-top">
+            <span class="ai-badge">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Riconoscimento AI
+            </span>
+            <button type="button" class="btn-link-sm" id="toggleAiKeyBtn" title="Impostazioni AI">
+              <i class="fa-solid fa-gear"></i>
             </button>
           </div>
           
-          <div class="ai-scan-content">
-            <p class="ai-desc">
-              Scatta una foto con lo smartphone o carica un'immagine: l'Intelligenza Artificiale riconoscerà la pianta e compilerà all'istante tutti i dati (Nome comune, scientifico, pH del terreno, umidità % e temperatura ideale).
-            </p>
-            
-            <div class="ai-actions-row">
-              <label class="btn btn-ai-camera" id="aiCameraLabel">
-                <i class="fa-solid fa-camera"></i> 
-                <span>Scatta Foto con AI</span>
-                <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display: none;">
-              </label>
+          <div class="ai-actions-row">
+            <label class="btn btn-ai-camera" id="aiCameraLabel">
+              <i class="fa-solid fa-camera"></i> 
+              <span>Scatta Foto con AI</span>
+              <input type="file" id="aiCameraInput" accept="image/*" capture="environment" style="display: none;">
+            </label>
 
-              <label class="btn btn-ai-upload" id="aiUploadLabel">
-                <i class="fa-solid fa-image"></i> 
-                <span>Carica da Galleria</span>
-                <input type="file" id="aiUploadInput" accept="image/*" style="display: none;">
-              </label>
+            <label class="btn btn-ai-upload" id="aiUploadLabel">
+              <i class="fa-solid fa-image"></i> 
+              <span>Galleria</span>
+              <input type="file" id="aiUploadInput" accept="image/*" style="display: none;">
+            </label>
 
-              <button type="button" class="btn btn-ai-trigger" id="aiTriggerBtn" style="display: none;">
-                <i class="fa-solid fa-bolt"></i> Analizza Foto Attuale
-              </button>
+            <button type="button" class="btn btn-ai-trigger" id="aiTriggerBtn" style="display: none;">
+              <i class="fa-solid fa-bolt"></i> Analizza
+            </button>
+          </div>
+
+          <!-- AI Loading -->
+          <div class="ai-loading" id="aiLoadingIndicator" style="display: none;">
+            <div class="ai-spinner"></div>
+            <div class="ai-loading-text">
+              <strong>Analisi botanica in corso...</strong>
+              <span>Riconoscimento specie, pH e umidità...</span>
             </div>
+          </div>
 
-            <!-- AI Loading Indicator -->
-            <div class="ai-loading" id="aiLoadingIndicator" style="display: none;">
-              <div class="ai-spinner"></div>
-              <div class="ai-loading-text">
-                <strong>Analisi botanica in corso...</strong>
-                <span>Riconoscimento specie, pH ideale, umidità del terreno e temperatura...</span>
-              </div>
+          <!-- AI Result -->
+          <div class="ai-success-banner" id="aiSuccessBanner" style="display: none;">
+            <div class="ai-success-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="ai-success-body">
+              <strong id="aiIdentifiedTitle">Pianta Riconosciuta!</strong>
+              <p id="aiIdentifiedDetails">Campi compilati automaticamente.</p>
             </div>
+          </div>
 
-            <!-- AI Success Result Banner -->
-            <div class="ai-success-banner" id="aiSuccessBanner" style="display: none;">
-              <div class="ai-success-icon"><i class="fa-solid fa-circle-check"></i></div>
-              <div class="ai-success-body">
-                <strong id="aiIdentifiedTitle">Pianta riconosciuta con successo!</strong>
-                <p id="aiIdentifiedDetails">Tutti i campi sono stati compilati automaticamente dall'AI.</p>
-              </div>
-            </div>
-
-            <!-- AI API Key Config Drawer -->
-            <div class="ai-key-drawer" id="aiKeyDrawer" style="display: none;">
-              <label for="geminiApiKeyInput" class="form-label">
-                <i class="fa-solid fa-key"></i> Chiave Google Gemini API (Opzionale / Gratuita)
-              </label>
-              <div class="key-input-wrap">
-                <input type="password" id="geminiApiKeyInput" class="form-control form-control-sm" placeholder="Incolla chiave API Gemini (es. AIzaSy...)">
-                <button type="button" class="btn btn-sm btn-primary" id="saveApiKeyBtn">Salva</button>
-                <button type="button" class="btn btn-sm btn-ghost" id="removeApiKeyBtn" style="display: none;" title="Rimuovi chiave">Rimuovi</button>
-              </div>
-              <small class="key-hint">
-                L'app dispone già di un motore botanico integrato con decine di specie. Per scansionare qualsiasi pianta al mondo con Gemini 2.0 Flash con visione avanzata, puoi ottenere una chiave gratuita in pochi secondi su <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>.
-              </small>
+          <!-- AI Key Drawer -->
+          <div class="ai-key-drawer" id="aiKeyDrawer" style="display: none;">
+            <div class="key-input-wrap">
+              <input type="password" id="geminiApiKeyInput" class="form-control form-control-sm" placeholder="Chiave API Gemini (opzionale)">
+              <button type="button" class="btn btn-sm btn-primary" id="saveApiKeyBtn">Salva</button>
+              <button type="button" class="btn btn-sm btn-ghost" id="removeApiKeyBtn" style="display: none;">✕</button>
             </div>
           </div>
         </div>
 
-        <!-- Plant Name (Required) -->
+        <!-- Inputs -->
         <div class="form-group">
-          <label for="plantNameInput" class="form-label required">
-            <i class="fa-solid fa-tag"></i> Nome Comune
-          </label>
-          <input type="text" id="plantNameInput" class="form-control" placeholder="es. Monstera, Ficus foglia di violino, Sansevieria..." required>
-          <div class="form-hint">Nome comune o identificativo della pianta.</div>
+          <label for="plantNameInput" class="form-label required">Nome Comune</label>
+          <input type="text" id="plantNameInput" class="form-control" placeholder="es. Monstera, Ficus, Aloe..." required>
         </div>
 
-        <!-- Scientific Name (Optional) -->
         <div class="form-group">
-          <label for="scientificNameInput" class="form-label">
-            <i class="fa-solid fa-italic"></i> Nome Scientifico (Botanico)
-          </label>
-          <input type="text" id="scientificNameInput" class="form-control font-italic" placeholder="es. Monstera deliciosa, Dracaena trifasciata...">
+          <label for="scientificNameInput" class="form-label">Nome Scientifico</label>
+          <input type="text" id="scientificNameInput" class="form-control font-italic" placeholder="es. Monstera deliciosa">
         </div>
 
-        <!-- 3 Required Botanical Metrics in a responsive row -->
-        <div class="form-row-three">
-          
-          <!-- pH del Terreno (Required) -->
+        <div class="form-row-two">
           <div class="form-group">
-            <label for="phInput" class="form-label required">
-              <i class="fa-solid fa-flask"></i> pH del Terreno
-            </label>
-            <input type="text" id="phInput" class="form-control" placeholder="es. 6.0 - 6.5" required>
-            <div class="preset-pills">
-              <button type="button" class="pill" onclick="setPreset('phInput', '5.5 - 6.5')">5.5-6.5</button>
-              <button type="button" class="pill" onclick="setPreset('phInput', '6.0 - 7.0')">6.0-7.0</button>
-              <button type="button" class="pill" onclick="setPreset('phInput', '6.5 - 7.5')">6.5-7.5</button>
-            </div>
+            <label for="phInput" class="form-label required">pH Terreno</label>
+            <input type="text" id="phInput" class="form-control" placeholder="es. 6.0 - 6.8" required>
           </div>
 
-          <!-- Temperatura Ideale (Required) -->
           <div class="form-group">
-            <label for="tempInput" class="form-label required">
-              <i class="fa-solid fa-temperature-half"></i> Temperatura Ideale
-            </label>
-            <input type="text" id="tempInput" class="form-control" placeholder="es. 18°C - 24°C" required>
-            <div class="preset-pills">
-              <button type="button" class="pill" onclick="setPreset('tempInput', '16°C - 22°C')">16-22°C</button>
-              <button type="button" class="pill" onclick="setPreset('tempInput', '18°C - 26°C')">18-26°C</button>
-              <button type="button" class="pill" onclick="setPreset('tempInput', '20°C - 30°C')">20-30°C</button>
-            </div>
-          </div>
-
-          <!-- Umidità del Terreno (Required Dropdown) -->
-          <div class="form-group">
-            <label for="humiditySelect" class="form-label required">
-              <i class="fa-solid fa-droplet"></i> Umidità Terreno
-            </label>
+            <label for="humiditySelect" class="form-label required">Umidità Terreno</label>
             <select id="humiditySelect" class="form-control custom-select" required>
-              <option value="Bassa">Bassa (terreno quasi asciutto / piante grasse)</option>
-              <option value="Media" selected>Media (leggermente umido / piante tropicali)</option>
-              <option value="Alta">Alta (costantemente umido / piante palustri o felci)</option>
-              <option value="custom">Personalizzata (% percentuale)</option>
+              <option value="Bassa">Bassa (15% - 25%)</option>
+              <option value="Media" selected>Media (30% - 50%)</option>
+              <option value="Alta">Alta (55% - 75%)</option>
+              <option value="custom">Altra %</option>
             </select>
-            <input type="text" id="customHumidityInput" class="form-control" placeholder="es. 60% - 70%" style="display: none; margin-top: 6px;">
+            <input type="text" id="customHumidityInput" class="form-control" placeholder="es. 20% - 30%" style="display: none; margin-top: 6px;">
+          </div>
+        </div>
+
+        <div class="form-row-two">
+          <div class="form-group">
+            <label for="tempInput" class="form-label required">Temperatura</label>
+            <input type="text" id="tempInput" class="form-control" placeholder="es. 18°C - 24°C" required>
           </div>
 
+          <div class="form-group">
+            <label for="sunlightSelect" class="form-label">Luce</label>
+            <select id="sunlightSelect" class="form-control custom-select">
+              <option value="Luce indiretta luminosa">Luce indiretta</option>
+              <option value="Pieno sole">Pieno sole</option>
+              <option value="Mezz'ombra">Mezz'ombra</option>
+              <option value="Ombra luminosa">Ombra</option>
+            </select>
+          </div>
         </div>
 
-        <!-- Esposizione Solare / Luce (Optional) -->
+        <!-- Photo Section -->
         <div class="form-group">
-          <label for="sunlightSelect" class="form-label">
-            <i class="fa-solid fa-sun"></i> Esposizione / Luce
-          </label>
-          <select id="sunlightSelect" class="form-control custom-select">
-            <option value="Luce indiretta luminosa">Luce indiretta luminosa (consigliata per interni)</option>
-            <option value="Pieno sole">Pieno sole (luce diretta)</option>
-            <option value="Mezz'ombra">Mezz'ombra / Luce filtrata</option>
-            <option value="Ombra luminosa">Ombra luminosa / Bassa illuminazione</option>
-          </select>
-        </div>
-
-        <!-- Photo Section: Upload, Preset Gallery, or URL -->
-        <div class="form-group">
-          <label class="form-label">
-            <i class="fa-solid fa-camera"></i> Foto della Pianta
-          </label>
+          <label class="form-label">Foto Pianta</label>
           
           <div class="photo-picker-container">
-            <!-- Preview Box -->
             <div class="photo-preview-box" id="photoPreviewBox">
-              <img id="photoPreviewImg" src="" alt="Anteprima foto" style="display: none;">
+              <img id="photoPreviewImg" src="" alt="Anteprima" style="display: none;">
               <div class="photo-placeholder" id="photoPlaceholder">
                 <i class="fa-solid fa-leaf"></i>
-                <span>Nessuna foto selezionata</span>
+                <span>Nessuna foto</span>
               </div>
-              <button type="button" class="remove-photo-btn" id="removePhotoBtn" style="display: none;" title="Rimuovi foto">
+              <button type="button" class="remove-photo-btn" id="removePhotoBtn" style="display: none;" title="Rimuovi">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
 
-            <!-- Upload Controls -->
             <div class="photo-options">
               <input type="hidden" id="imageUrlInput">
               
-              <!-- Direct File Upload Button -->
               <label class="btn-file-upload">
-                <i class="fa-solid fa-upload"></i> Carica dal dispositivo
+                <i class="fa-solid fa-upload"></i> Carica Foto
                 <input type="file" id="fileUploadInput" accept="image/*" style="display: none;">
               </label>
 
-              <!-- Gallery Picker Button -->
               <button type="button" class="btn btn-outline" id="toggleGalleryBtn">
-                <i class="fa-solid fa-images"></i> Scegli dalla galleria (<span id="galleryCount">22</span>)
+                <i class="fa-solid fa-images"></i> Galleria (<span id="galleryCount">22</span>)
               </button>
 
-              <!-- Custom URL Input (collapsible) -->
-              <div class="url-input-wrap">
-                <input type="url" id="customUrlInput" class="form-control form-control-sm" placeholder="Oppure incolla link immagine (https://...)">
-              </div>
+              <input type="hidden" id="customUrlInput">
             </div>
           </div>
 
-          <!-- Embedded Gallery Drawer -->
+          <!-- Gallery Drawer -->
           <div class="gallery-drawer" id="galleryDrawer" style="display: none;">
             <div class="gallery-drawer-header">
-              <span>Seleziona una foto botanica dalla collezione:</span>
+              <span>Scegli una foto dalla collezione:</span>
               <button type="button" class="close-drawer-btn" id="closeGalleryDrawerBtn">&times;</button>
             </div>
             <div class="gallery-thumbnails" id="galleryThumbnails"></div>
           </div>
         </div>
 
-        <!-- Notes / Care instructions -->
+        <!-- Notes -->
         <div class="form-group">
-          <label for="notesInput" class="form-label">
-            <i class="fa-solid fa-book-open"></i> Note di Coltivazione & Suggerimenti
-          </label>
-          <textarea id="notesInput" class="form-control" rows="3" placeholder="Frequenza di annaffiatura, tipo di concime, consigli sul rinvaso o particolarità della specie..."></textarea>
+          <label for="notesInput" class="form-label">Note & Consigli</label>
+          <textarea id="notesInput" class="form-control" rows="2" placeholder="Annaffiatura, terriccio o consigli..."></textarea>
         </div>
 
         <div class="modal-footer">
@@ -392,21 +292,15 @@
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
+  <!-- Delete Modal -->
   <div class="modal-backdrop" id="deleteModalBackdrop" style="display: none;">
     <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <div class="modal-title-wrap">
-          <span class="modal-emoji text-danger">⚠️</span>
-          <div>
-            <h3>Conferma eliminazione</h3>
-            <p class="modal-subtitle">Questa azione è irreversibile e rimuoverà la pianta dal database per tutti gli utenti.</p>
-          </div>
-        </div>
+        <h3 style="color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> Elimina Pianta</h3>
         <button class="close-modal-btn" id="closeDeleteModalBtn">&times;</button>
       </div>
       <div class="modal-body delete-prompt">
-        <p>Sei sicuro di voler eliminare definitivamente:</p>
+        <p>Vuoi davvero eliminare questa pianta dal database?</p>
         <div class="delete-plant-card" id="deletePlantPreview">
           <strong>Nome Pianta</strong>
         </div>
@@ -414,44 +308,30 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" id="cancelDeleteBtn">Annulla</button>
         <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-          <i class="fa-solid fa-trash-can"></i> Elimina Pianta
+          <i class="fa-solid fa-trash-can"></i> Elimina
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Share & QR Code Modal -->
+  <!-- Share Modal -->
   <div class="modal-backdrop" id="shareModalBackdrop" style="display: none;">
     <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <div class="modal-title-wrap">
-          <span class="modal-emoji">🌐</span>
-          <div>
-            <h3>Condividi Database Botanico</h3>
-            <p class="modal-subtitle">Chiunque abbia questo link può visualizzare e modificare i dati in tempo reale</p>
-          </div>
-        </div>
+        <h3><i class="fa-solid fa-share-nodes"></i> Condividi App</h3>
         <button class="close-modal-btn" id="closeShareModalBtn">&times;</button>
       </div>
       <div class="modal-body text-center">
-        <!-- QR Code Canvas -->
         <div class="qrcode-wrapper">
           <div id="qrcode"></div>
-          <span class="qr-caption">Scansiona con la fotocamera dello smartphone per aprire l'app</span>
+          <span class="qr-caption">Inquadra con il telefono per aprire l'app</span>
         </div>
 
-        <!-- Copy Link Box -->
         <div class="share-link-box">
           <input type="text" id="shareUrlInput" readonly class="form-control">
           <button type="button" class="btn btn-primary" id="copyShareUrlBtn">
             <i class="fa-solid fa-copy"></i> Copia
           </button>
-        </div>
-
-        <div class="share-perks">
-          <div class="perk-item"><i class="fa-solid fa-bolt"></i> Sincronizzazione istantanea</div>
-          <div class="perk-item"><i class="fa-solid fa-user-xmark"></i> Nessuna registrazione richiesta</div>
-          <div class="perk-item"><i class="fa-solid fa-mobile-screen-button"></i> Compatibile al 100% su smartphone</div>
         </div>
       </div>
       <div class="modal-footer">
@@ -460,10 +340,10 @@
     </div>
   </div>
 
-  <!-- Toast Notifications Container -->
+  <!-- Toast Notifications -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Main JavaScript Application -->
+  <!-- Main JavaScript -->
   <script src="app.js"></script>
 </body>
 </html>

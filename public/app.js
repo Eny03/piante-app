@@ -354,22 +354,13 @@ function setupRealtimeSync() {
 }
 
 function updateSyncBadge(isConnected) {
+  if (!elements.liveSyncBadge) return;
   if (isConnected) {
-    elements.liveSyncBadge.innerHTML = `
-      <span class="pulse-dot"></span>
-      <span class="badge-text">Sincronizzato</span>
-    `;
-    elements.liveSyncBadge.style.background = '#ecfdf5';
-    elements.liveSyncBadge.style.borderColor = '#a7f3d0';
-    elements.liveSyncBadge.style.color = '#065f46';
+    elements.liveSyncBadge.className = 'live-dot online';
+    elements.liveSyncBadge.title = 'Sincronizzato in tempo reale';
   } else {
-    elements.liveSyncBadge.innerHTML = `
-      <span class="pulse-dot" style="background-color: #f59e0b; box-shadow: none;"></span>
-      <span class="badge-text">Riconnessione...</span>
-    `;
-    elements.liveSyncBadge.style.background = '#fffbeb';
-    elements.liveSyncBadge.style.borderColor = '#fde68a';
-    elements.liveSyncBadge.style.color = '#b45309';
+    elements.liveSyncBadge.className = 'live-dot reconnecting';
+    elements.liveSyncBadge.title = 'Riconnessione in corso...';
   }
 }
 
@@ -483,26 +474,17 @@ function renderPlants() {
   });
 }
 
-function createPlantCardHTML(plant) {
-  // Humidity badge color
-  let humClass = 'badge-med';
-  let humIcon = 'fa-droplet';
-  const humStr = (plant.humidity || '').toLowerCase();
-  if (humStr.includes('bassa') || humStr.includes('10%') || humStr.includes('15%') || humStr.includes('20%')) {
-    humClass = 'badge-low';
-    humIcon = 'fa-sun';
-  } else if (humStr.includes('alta') || humStr.includes('60%') || humStr.includes('65%') || humStr.includes('70%')) {
-    humClass = 'badge-high';
-    humIcon = 'fa-water';
-  } else if (humStr.includes('%')) {
-    humClass = 'badge-custom';
-    humIcon = 'fa-droplet';
-  } else {
-    humClass = 'badge-med';
-    humIcon = 'fa-droplet';
-  }
+function shortenSunlight(sun) {
+  if (!sun) return 'Diffusa';
+  const s = String(sun).toLowerCase();
+  if (s.includes('indiretta')) return 'Luce indiretta';
+  if (s.includes('pieno sole')) return 'Pieno sole';
+  if (s.includes('mezz\'ombra') || s.includes('mezzombra')) return 'Mezz\'ombra';
+  if (s.includes('ombra')) return 'Ombra';
+  return sun.length > 15 ? sun.substring(0, 13) + '..' : sun;
+}
 
-  // Media section
+function createPlantCardHTML(plant) {
   const mediaHTML = plant.imageUrl
     ? `<img src="${escapeHtml(plant.imageUrl)}" alt="${escapeHtml(plant.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'card-media-placeholder\\'><i class=\\'fa-solid fa-leaf\\'></i><span>${escapeHtml(plant.name)}</span></div>';">`
     : `<div class="card-media-placeholder"><i class="fa-solid fa-leaf"></i><span>${escapeHtml(plant.name)}</span></div>`;
@@ -515,50 +497,37 @@ function createPlantCardHTML(plant) {
 
       <div class="card-body">
         <div class="card-header-titles">
-          <div class="name-entry">
-            <span class="name-category-label">Nome comune</span>
-            <h4 class="plant-title">${escapeHtml(plant.name)}</h4>
-          </div>
-          <div class="name-entry scientific-entry">
-            <span class="name-category-label">Nome scientifico</span>
-            <p class="plant-scientific">${escapeHtml(plant.scientificName || 'Non specificato')}</p>
-          </div>
+          <h4 class="plant-title">${escapeHtml(plant.name)}</h4>
+          ${plant.scientificName ? `<p class="plant-scientific">${escapeHtml(plant.scientificName)}</p>` : ''}
         </div>
 
         <div class="metrics-grid">
-          <!-- pH Terreno -->
-          <div class="metric-item">
-            <span class="metric-icon">🧪</span>
-            <div class="metric-content">
-              <span class="metric-label">pH Terreno</span>
-              <span class="metric-val">${escapeHtml(plant.ph || 'N/D')}</span>
+          <div class="metric-pill">
+            <span class="m-icon">🧪</span>
+            <div class="m-text">
+              <span class="m-lbl">pH</span>
+              <strong class="m-val">${escapeHtml(plant.ph || 'N/D')}</strong>
             </div>
           </div>
-
-          <!-- Temperatura -->
-          <div class="metric-item">
-            <span class="metric-icon">🌡️</span>
-            <div class="metric-content">
-              <span class="metric-label">Temp. Ideale</span>
-              <span class="metric-val">${escapeHtml(plant.temperature || 'N/D')}</span>
+          <div class="metric-pill">
+            <span class="m-icon">💧</span>
+            <div class="m-text">
+              <span class="m-lbl">Umidità</span>
+              <strong class="m-val">${escapeHtml(plant.humidity || 'Media')}</strong>
             </div>
           </div>
-
-          <!-- Umidità -->
-          <div class="metric-item">
-            <span class="metric-icon">💧</span>
-            <div class="metric-content">
-              <span class="metric-label">Umidità</span>
-              <span class="metric-val">${escapeHtml(plant.humidity || 'Media')}</span>
+          <div class="metric-pill">
+            <span class="m-icon">🌡️</span>
+            <div class="m-text">
+              <span class="m-lbl">Temp.</span>
+              <strong class="m-val">${escapeHtml(plant.temperature || 'N/D')}</strong>
             </div>
           </div>
-
-          <!-- Luce -->
-          <div class="metric-item">
-            <span class="metric-icon">☀️</span>
-            <div class="metric-content">
-              <span class="metric-label">Esposizione</span>
-              <span class="metric-val" title="${escapeHtml(plant.sunlight || 'Non specificata')}">${escapeHtml(plant.sunlight || 'Non specificata')}</span>
+          <div class="metric-pill">
+            <span class="m-icon">☀️</span>
+            <div class="m-text">
+              <span class="m-lbl">Luce</span>
+              <strong class="m-val" title="${escapeHtml(plant.sunlight || '')}">${escapeHtml(shortenSunlight(plant.sunlight))}</strong>
             </div>
           </div>
         </div>
