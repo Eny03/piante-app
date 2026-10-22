@@ -8,3 +8,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
+      - key: GEMINI_API_KEY
+        sync: false

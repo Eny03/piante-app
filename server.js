@@ -13,6 +13,23 @@ app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
+// Load environment variables from .env if present
+const envFile = path.join(__dirname, '.env');
+if (fs.existsSync(envFile)) {
+  const envContent = fs.readFileSync(envFile, 'utf8');
+  for (const line of envContent.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.substring(0, idx).trim();
+      const val = trimmed.substring(idx + 1).trim();
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+}
+
 // Directories
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'plants.json');
@@ -490,19 +507,26 @@ const BOTANICAL_KNOWLEDGE_BASE = [
   }
 ];
 
+const DEFAULT_GEMINI_KEY = process.env.GEMINI_API_KEY;
+
 // Gemini Vision API Call
 async function identifyWithGemini(imageBuffer, mimeType, apiKey) {
   const base64Data = imageBuffer.toString('base64');
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const candidateModels = [
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash-lite',
+    'gemini-flash-latest',
+    'gemini-3.8-flash'
+  ];
 
   const prompt = `Sei un botanico ed agronomo professionista. Analizza l'immagine di questa pianta e riconoscila con precisione.
 Restituisci ESCLUSIVAMENTE un JSON valido (senza testo descrittivo, senza markdown o delimitatori di codice) con questi campi:
 {
   "name": "Nome comune in italiano (es. Monstera, Ficus, Sansevieria)",
   "scientificName": "Nome scientifico botanico (Genere e specie)",
-  "ph": "intervallo numerico di pH ottimale (es: 6.0 - 6.8)",
+  "ph": "intervallo numerico di pH ottimale pulito (es: 6.0 - 6.8)",
   "temperature": "intervallo temperatura ideale (es: 18°C - 24°C)",
-  "humidity": "intervallo percentuale umidità ottimale del terreno per igrometro (es: 35% - 50%)",
+  "humidity": "intervallo percentuale umidità ottimale del terreno per igrometro (es: 35% - 50% oppure 15% - 25%)",
   "sunlight": "Esposizione consigliata (scegli una tra: 'Luce indiretta luminosa', 'Pieno sole', 'Mezz\\'ombra', 'Ombra luminosa')",
   "notes": "Consigli pratici di coltivazione sintetici (terriccio, annaffiatura e drenaggio)"
 }`;
@@ -526,33 +550,36 @@ Restituisci ESCLUSIVAMENTE un JSON valido (senza testo descrittivo, senza markdo
     }
   };
 
-  let response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody)
-  });
+  let lastError = null;
+  for (const model of candidateModels) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
 
-  // Fallback to gemini-1.5-flash if 2.5-flash endpoint is unavailable
-  if (!response.ok) {
-    const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    response = await fetch(fallbackEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    });
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn(`Model ${model} returned ${response.status}: ${errText}`);
+        lastError = new Error(`Model ${model} error: ${errText}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) continue;
+
+      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (err) {
+      console.warn(`Error calling ${model}:`, err.message);
+      lastError = err;
+    }
   }
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${errText}`);
-  }
-
-  const data = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) throw new Error('Risposta vuota da Gemini AI');
-
-  const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-  return JSON.parse(cleanJson);
+  throw lastError || new Error('Nessun modello Gemini ha risposto');
 }
 
 // Built-in Knowledge & Image Hash Recognition Fallback
@@ -635,7 +662,7 @@ app.post('/api/ai-identify', upload.single('photo'), async (req, res) => {
       }
     }
 
-    const userApiKey = req.headers['x-gemini-key'] || req.body.apiKey || process.env.GEMINI_API_KEY;
+    const userApiKey = req.headers['x-gemini-key'] || req.body.apiKey || DEFAULT_GEMINI_KEY;
 
     let result = null;
     let recognitionSource = 'botanical-engine';

@@ -3,3 +3,4 @@ cloudflared.exe
 WhatsApp Image*.jpeg
 *.log
 .DS_Store
+.env
