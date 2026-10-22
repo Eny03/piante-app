@@ -1,0 +1,5 @@
+node_modules/
+cloudflared.exe
+WhatsApp Image*.jpeg
+*.log
+.DS_Store

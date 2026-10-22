@@ -1,0 +1,14 @@
+{
+  "name": "botanical-database",
+  "version": "1.0.0",
+  "description": "Full-stack Botanical Database web app with real-time sync and public link",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
